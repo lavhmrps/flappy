@@ -82,7 +82,7 @@ function initSprites(img) {
     bronze: new Sprite(img, 198, 137, 22, 22)
   };
 
-  s_new = new Sprite(img,0,0,0);
+  s_new = new Sprite(img,196, 169, 33, 7);
 
 
 }

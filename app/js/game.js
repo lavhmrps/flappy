@@ -8,6 +8,8 @@
 	width,
 	height,
 
+	canvasMouseover,
+
 	fgpos = 0,
 	frames = 0,
 	score = 0,
@@ -23,6 +25,8 @@
 		gold: 3,
 		platinum:4
 	},
+
+	okbtn,
 
 	sfx_die = new Audio("sfx/sfx_die.ogg"),
 	sfx_hit = new Audio("sfx/sfx_hit.ogg"),
@@ -83,6 +87,7 @@
 
 					if(currentstate === states.Game) {
 						sfx_hit.play();
+						frames = 0;
 						currentstate = states.Score;
 					}
 				}
@@ -161,6 +166,7 @@
 						currentstate = states.Score;
 						sfx_hit.play();
 						setTimeout(function() {sfx_die.play();}, 400);
+						frames = 0;
 					}
 
 					// passed a pipe, get point
@@ -219,9 +225,16 @@
 				break;
 
 			case states.Score:
-				currentstate = states.Splash;
-				sfx_swoosh.play();
-				pipes.reset();
+				if(frames < 70) // wait until ok button is done sliding up
+				 	return;
+				var mx = evt.offsetX,
+					my = evt.offsetY;
+
+				if( canvasMouseover && mx > okbtn.x && mx < okbtn.x + okbtn.width && my > okbtn.y && my < okbtn.y + okbtn.height) {
+					currentstate = states.Splash;
+					sfx_swoosh.play();
+					pipes.reset();
+				}
 				break;
 		}
 	}
@@ -230,6 +243,13 @@
 
 		container = document.getElementById("container");
 		canvas = document.createElement("canvas");
+
+		canvas.addEventListener("mouseover",function(){
+			canvasMouseover = true;
+		});
+		canvas.addEventListener("mouseout",function(){
+			canvasMouseover = false;
+		});
 		
 		width = window.innerWidth;
 		height = window.innerHeight;
@@ -259,6 +279,13 @@
 			initSprites(this);
 			ctx.fillStyle = s_bg.color;
 			run();
+
+			okbtn = {
+				x: (width - s_buttons.Ok.width)/2,
+				y: height- 180,
+				height: s_buttons.Ok.height,
+				width: s_buttons.Ok.width
+			};
 		}
 
 		for(var i=0; i< num_sfx_wing;i++){
@@ -270,6 +297,10 @@
 		sfx_hit.volume = .1;
 		sfx_die.volume = .1;
 		sfx_point.volume = .1;
+
+
+
+		
 	}
 
 	function run(){
@@ -326,14 +357,13 @@
 			s_text.GetReady.draw(ctx, width2 - s_text.GetReady.width/2, height-380);
 			s_splash.draw(ctx, width2 - s_splash.width/2, height2 - s_splash.height/2);
 			
-
-
 		}
 		if(currentstate === states.Score){
 
 			var gameoverY 			= 80,
 			 	scoreboardY 		= 150,
 			 	scoreYoffset 		= 35,
+			 	newYoffset			= 58,
 			 	highscoreYoffset 	= 75,
 			 	newHighscore		= score > highscore,
 			 	medalValor = 0,
@@ -380,8 +410,10 @@
 					s_numberS.draw(ctx, 250 - (s_numberS.width * scoreLen), scoreboardY + 85 - sbCounter, 0);
 					// highscore
 					s_numberS.draw(ctx, 250 - (s_numberS.width * highscoreLen), scoreboardY + 125 - sbCounter, highscore);
-					if(newHighscore){
-						
+					// okbtn
+					s_buttons.Ok.draw(ctx, width2 - s_buttons.Ok.width/2, height- 130 - sbCounter );
+					if(newHighscore ){
+						s_new.draw(ctx, 180, scoreboardY + newYoffset+50-sbCounter);
 					}
 
 					switch(medalValor){
@@ -408,6 +440,11 @@
 					s_score.draw(ctx, width2 - s_score.width/2, scoreboardY);
 					s_numberS.draw(ctx, 250 - (s_numberS.width * scoreCounterLen)  ,scoreboardY + scoreYoffset ,scoreCounter);
 					s_numberS.draw(ctx, 250 - (s_numberS.width * highscoreLen)  ,scoreboardY + highscoreYoffset, highscore);
+					s_buttons.Ok.draw(ctx, width2 - s_buttons.Ok.width/2 , height- 180);
+					if(newHighscore ){
+						s_new.draw(ctx, 180, scoreboardY + newYoffset);
+					}
+
 					switch(medalValor){
 						case valor.bronze:
 							s_medal.bronze.draw(ctx,medalX,medalY);
