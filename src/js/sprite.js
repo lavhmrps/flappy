@@ -83,6 +83,4 @@ function initSprites(img) {
   };
 
   s_new = new Sprite(img,196, 169, 33, 7);
-
-
 }
