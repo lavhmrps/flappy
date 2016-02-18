@@ -8,19 +8,39 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name"mobile-web-app-capable" content="yes">
 
-	<style>
-		canvas{
-			display:block;
-			position:absolute;
-			top:0;bottom:0;left:0;right:0;
-			margin:auto;
-			cursor: pointer;
-		}
-	</style>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+
+	<script src="js/jquery.min.js"></script>
+
 </head>
 <body>
 	
-	<div id="container"><div>
+	<div id="container">
+		<div>
+			<canvas id="flappyCanvas"></canvas>
+		</div>
+		<div id="options">
+			<div id="optPipeGap" class="option">
+				<span class="label">Pipegap</span>
+				<input id="inputPipeGap" type="range" min="20" max="150" value="80"></input>
+				<span id="outputPipeGap" class="output"></span>
+			</div>
+			<div id="optPipePeriod" class="option">
+				<span class="label">Pipe Frequency</span>
+				<input id="inputPipePeriod" type="range" min=".2" max="2" value=".7" step=".1"></input>
+				<span id="outputPipePeriod" class="output"></span>
+			</div>
+			<div id="optSpeed" class="option">
+				<span class="label">Speed</span>
+				<input id="inputSpeed" type="range" min="1" max="8" value="2"></input>
+				<span id="outputSpeed" class="output"></span>
+			</div>
+			<div>
+				<a href="#" id="btnReset" class="btn">Reset</a>
+			</div>
+
+		</div>
+	<div>
 	
 	<script src="js/sprite.js"></script>
 	<script src="js/game.js"></script>

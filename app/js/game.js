@@ -16,7 +16,18 @@
 	highscore = 0,
 	best = 0,
 	flaps = 0,
-	pipeGap = 100,
+	pipeGap = 80,
+	pipePeriod = 70,
+	pipeSpeed = 3,
+	freqMultiplier = 10,
+
+	inputGap,
+	inputPeriod,
+	inputSpeed,
+
+	outputGap,
+	outputSpeed,
+	outputPeriod,
 
 	valor = {
 		none: 0,
@@ -27,10 +38,11 @@
 	},
 
 	okbtn,
+	options,
 
 	sfx_die = new Audio("sfx/sfx_die.ogg"),
 	sfx_hit = new Audio("sfx/sfx_hit.ogg"),
-	sfx_point = new Audio("sfx/sfx_point.ogg"),
+	sfx_point = [],
 	sfx_swoosh = new Audio("sfx/sfx_swoosh.ogg"),
 	sfx_wing =  [],
 	num_sfx_wing = 6,
@@ -56,7 +68,7 @@
 		rotation: 0,
 		velocity: 0,
 		gravity: 0.25,
-		_jump: 4.6,
+		_jump: 5,
 
 		jump : function(){
 			this.velocity = -this._jump;
@@ -111,8 +123,10 @@
 			ctx.translate(this.x, this.y);
 			ctx.rotate(this.rotation);
 
+
 			var n = this.animation[this.frame];
-			s_bird[n].draw(ctx, -s_bird[n].width/2, -s_bird[n].height/2 );		
+			s_bird[n].draw(ctx, -s_bird[n].width/2, -s_bird[n].height/2 );
+
 			ctx.restore();
 
 		}
@@ -121,6 +135,7 @@
 	
 	pipes = {
 
+
 		_pipes : [],
 
 		reset: function(){
@@ -128,29 +143,33 @@
 		},
 
 		update: function(){
+			var pipeGap2 = Math.round(pipeGap)/2;
 
-			if(frames % 100 === 0){
+			if(Math.floor(frames % (60/pipePeriod)) === 0){
 				var rand = Math.random();
 				// positive / negative pipe-position-factor based on last digit
 				rand = rand.toString().charAt(rand.toString().length-1)%2==0?rand:rand*-1;
-				var _y = height - (s_pipeSouth.height*1.5 + s_fg.height*1.3 + 100 * rand);
+				var _y = height - (s_pipeSouth.height*1.5 + s_fg.height*1.3 - 50 - (160 - pipeGap2)*rand);
+
 				this._pipes.push({
 					x: width,
 					y: _y,
 					width: s_pipeSouth.width,
-					height: s_pipeSouth.height
+					height: s_pipeSouth.height,
+					passed: false
 				});
 			}
 
+			
 			for(var i =0, len = this._pipes.length; i < len; i++){
 				var pipe = this._pipes[i];
-				pipe.x -= 2;
+				pipe.x -= pipeSpeed;
 
 				if(i === 0){
 					// collision-check
 					var cx =  Math.min(Math.max(bird.x, pipe.x), pipe.x + pipe.width);
-					var cy1 = Math.min(Math.max(bird.y, pipe.y), pipe.y + pipe.height);
-					var cy2 = Math.min(Math.max(bird.y, pipe.y + pipe.height + pipeGap), pipe.y + 2*pipe.height+pipeGap);
+					var cy1 = Math.min(Math.max(bird.y, pipe.y), pipe.y -pipeGap2 + pipe.height);
+					var cy2 = Math.min(Math.max(bird.y, pipe.y + pipe.height + pipeGap2), pipe.y + 2*pipe.height + pipeGap2);
 
 					var  dx = bird.x - cx;
 					var dy1 = bird.y - cy1;
@@ -160,7 +179,6 @@
 					var  d2 = dx*dx + dy2*dy2;
 
 					var r = bird.radius * bird.radius;
-
 					// if crash
 					if(r > d1 || r > d2){
 						currentstate = states.Score;
@@ -170,8 +188,9 @@
 					}
 
 					// passed a pipe, get point
-					if( (pipe.x+pipe.width/2) == bird.x){
-						sfx_point.play();
+					if( (pipe.x+pipe.width/2) <= bird.x && !pipe.passed){
+						sfx_point[score%num_sfx_wing].play();
+						pipe.passed = true;
 						++score;
 					}
 					
@@ -183,17 +202,19 @@
 					i--;
 					len--;
 				}
-			}
-
-			
+			}			
 		},
 
 		draw: function(ctx){
+			ctx.save();
 			for(var i =0, len = this._pipes.length; i < len; i++){
 				var p = this._pipes[i];
-				s_pipeSouth.draw(ctx, p.x, p.y);
-				s_pipeNorth.draw(ctx, p.x, p.y + pipeGap + p.height);
+				var pipeGap2 = Math.round(pipeGap)/2;
+				s_pipeSouth.draw(ctx, p.x, p.y - pipeGap2);
+				s_pipeNorth.draw(ctx, p.x, p.y + pipeGap2+p.height);
+			
 			}
+			ctx.restore();
 		}
 	},
 	game = {
@@ -208,16 +229,17 @@
 			goCounter= 0;
 			scoreCounter=0;
 		}
-	}
-		;
+	};
 
 
 	function onpress(evt){
 		switch(currentstate){
 			case states.Splash:
-				game.reset();
-				currentstate = states.Game;
-				bird.jump();
+				if(canvasMouseover){
+					game.reset();
+					currentstate = states.Game;
+					bird.jump();
+				}
 				break;
 
 			case states.Game:
@@ -242,14 +264,15 @@
 	function main(){
 
 		container = document.getElementById("container");
-		canvas = document.createElement("canvas");
-
+		canvas = document.getElementById("flappyCanvas");
+		
 		canvas.addEventListener("mouseover",function(){
 			canvasMouseover = true;
 		});
 		canvas.addEventListener("mouseout",function(){
 			canvasMouseover = false;
 		});
+
 		
 		width = window.innerWidth;
 		height = window.innerHeight;
@@ -268,7 +291,6 @@
 		canvas.height = height;
 
 		ctx = canvas.getContext("2d");
-		container.appendChild(canvas);
 
 		currentstate = states.Splash;
 
@@ -290,15 +312,14 @@
 
 		for(var i=0; i< num_sfx_wing;i++){
 			sfx_wing[i] = new Audio("sfx/sfx_wing.ogg");
+			sfx_point[i] = new Audio("sfx/sfx_point.ogg");
 			sfx_wing[i].volume = .1;
+			sfx_point[i].volume = .1;
 		}
 		
 		sfx_swoosh.volume = .1;
 		sfx_hit.volume = .1;
 		sfx_die.volume = .1;
-		sfx_point.volume = .1;
-
-
 
 		
 	}
@@ -468,5 +489,52 @@
 	}
 
 	main();
+
+
+	// HTML inputs
+	inputGap = document.getElementById("inputPipeGap");
+	inputPeriod = document.getElementById("inputPipePeriod");
+	inputSpeed = document.getElementById("inputSpeed");
+	btnReset = document.getElementById("btnReset");
+
+	outputGap =document.getElementById("outputPipeGap");
+	outputPeriod = document.getElementById("outputPipePeriod")
+	outputSpeed = document.getElementById("outputSpeed");
+
+	outputGap.innerHTML = inputGap.value;
+	outputPeriod.innerHTML = inputPeriod.value;
+	outputSpeed.innerHTML = inputSpeed.value;
+
+	pipeGap = inputGap.value;
+	pipePeriod = inputPeriod.value;
+	pipeSpeed = inputSpeed.value;
+	
+
+	inputGap.addEventListener("input",function(){
+		outputGap.innerHTML = this.value;
+		pipeGap = this.value;
+	});
+	inputPeriod.addEventListener("input",function(){
+		outputPeriod.innerHTML = this.value;
+		pipePeriod = this.value;
+	});
+	inputSpeed.addEventListener("input",function(){
+		outputSpeed.innerHTML = this.value;
+		pipeSpeed = this.value;
+	});
+
+	btnReset.addEventListener("click", function(){
+		inputGap.value = 80;
+		outputGap.innerHTML =inputGap.value;
+		pipeGap = 80;
+
+		inputPeriod.value = 0.7
+		outputPeriod.innerHTML = inputPeriod.value;
+		pipePeriod = .7;
+
+		inputSpeed.value = 2;
+		outputSpeed.innerHTML = inputSpeed.value;
+		pipeSpeed = 2;
+	})
 
 })();

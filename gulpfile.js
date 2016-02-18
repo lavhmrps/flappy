@@ -37,9 +37,16 @@ gulp.task("html", function(){
 	.pipe(reload({stream: true}));
 });
 
+gulp.task("css", function(){
+	gulp.src("src/css/*.css")
+	.pipe(gulp.dest("app/css/"))
+	.pipe(reload({stream: true}));
+});
+
 gulp.task("watch", function(){
 	gulp.watch("src/js/*.js",["scripts"]);
 	gulp.watch("src/*.html",["html"]);
+	gulp.watch("src/css/*.css"),["css"];
 });
 
-gulp.task("default",["server", "scripts", "scripts-uglify", "html", "watch"]);
+gulp.task("default",["server", "scripts", "scripts-uglify", "html", "css", "watch"]);
